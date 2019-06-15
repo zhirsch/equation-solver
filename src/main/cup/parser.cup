@@ -1,0 +1,47 @@
+import com.zacharyhirsch.equationsolver.Equation;
+import com.zacharyhirsch.equationsolver.Expression;
+import com.zacharyhirsch.equationsolver.Comparator;
+import com.zacharyhirsch.equationsolver.Term;
+import com.zacharyhirsch.equationsolver.Variable;
+
+parser code {:
+  public Parser(java.io.Reader reader) {
+    super(new Lexer(reader));
+  }
+:};
+
+terminal double     NUM;
+terminal Variable   VAR;
+terminal Comparator CMP;
+terminal            MULT;
+terminal            PLUS;
+terminal            MINUS;
+
+non terminal goal;
+non terminal Equation   equation;
+non terminal Expression expression;
+non terminal Term       term;
+
+start with goal;
+
+goal ::=
+    equation:  e                              {: RESULT = e; :}
+  ;
+
+equation ::=
+    expression:lhs CMP:cmp expression:rhs     {: RESULT = Equation.builder().setLhs(lhs).setComparator(cmp).setRhs(rhs).build(); :}
+  ;
+
+expression ::=
+    term:t                                    {: RESULT = Expression.builder().addTerm(t).build(); :}
+  | MINUS term:t                              {: RESULT = Expression.builder().addTerm(t.inverse()).build(); :}
+  | expression:e PLUS term:t                  {: RESULT = e.toBuilder().addTerm(t).build(); :}
+  | expression:e MINUS term:t                 {: RESULT = e.toBuilder().addTerm(t.inverse()).build(); :}
+  ;
+
+term ::=
+    NUM:n MULT VAR:v                          {: RESULT = Term.builder().setCoef(n).setVariable(v).build(); :}
+  | NUM:n VAR:v                               {: RESULT = Term.builder().setCoef(n).setVariable(v).build(); :}
+  | NUM:n                                     {: RESULT = Term.builder().setCoef(n).build(); :}
+  | VAR:v                                     {: RESULT = Term.builder().setCoef(1.0).setVariable(v).build(); :}
+  ;
